@@ -51,6 +51,15 @@ int main() {
                 cerr<<"Failed to send the command to server.\n";
                 break;
             }
+            // Trim trailing newline
+            if (!command.empty() && command.back() == '\n') {
+                command.pop_back();
+            }
+            // Send command to server
+            if (!dispatcher.sendCommand(command)) {
+                cerr << "Failed to send the command to server.\n";
+                break;
+            }
         }
 
         if (FD_ISSET(sock_fd, &fdsread)) {
@@ -60,14 +69,12 @@ int main() {
                 cout<<"Server closed connection.\n";
                 break;
             }
-        }
-
-        string response(buffer);
-        responsehandler.handleResponse(response);
-
-        if(response.rfind("validate quit", 0) == 0) {
-            cout << "Quit acknowledged by server, exiting client.\n";
-            break;
+            string response(buffer);
+            responsehandler.handleResponse(response);
+            if(response.rfind("validate quit", 0) == 0) {
+                cout << "Quit acknowledged by server, exiting client.\n";
+                break;
+            }
         }
     }
     return 0;

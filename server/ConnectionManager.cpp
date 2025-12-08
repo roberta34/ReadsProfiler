@@ -91,10 +91,6 @@ void ConnectionManager::run(){
                 memset(buffer, 0, sizeof(buffer));
                 int valread=read(sd, buffer, sizeof(buffer)-1);
 
-
-                cout << "[DEBUG] valread=" << valread 
-                     << " raw='" << string(buffer, valread) << "'" << endl;
-
                 if(valread<=0){
                     getpeername(sd, (struct sockaddr*)&address, &addrlen);
 
