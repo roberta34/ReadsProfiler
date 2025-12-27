@@ -22,7 +22,7 @@ int main() {
     int sock_fd=dispatcher.getSocketFd();
     fd_set fdsread;
     char buffer[1024];
-    cout<<"ReadsProfiler client started.\n"<<"Available commands:\n"<<" search <criterii>\n"<<" download <id_carte>\n"<<" recommendations <criterii>\n"<<" quit\n";
+    cout<<"ReadsProfiler client started.\n"<<"Available commands:\n"<<" login <user>\n"<<" search <criterii>\n"<<" download <id_carte>\n"<<" recommendations <criterii>\n"<<" quit\n";
 
     while(true) {
         FD_ZERO(&fdsread);

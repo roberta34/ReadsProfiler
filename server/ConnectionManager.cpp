@@ -14,7 +14,6 @@
 using namespace std;
 
 ConnectionManager::ConnectionManager(){
-    //crearea socketului
     server_fd=socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd==0){
         perror("socket failed");
@@ -108,6 +107,22 @@ void ConnectionManager::run(){
                     string response=buildResponse(type);
 
                     send(sd, response.c_str(), response.size(),0);
+
+                    if(type == Command::LOGIN){
+                        int pos=msg.find(' ');
+                        string username;
+                        if(pos!=string::npos)
+                            username=msg.substr(pos+1);
+                        if (socketToUser.find(sd)!=socketToUser.end()){
+                            string errorMsg="login error: user already logged in\n";
+                            send(sd, errorMsg.c_str(), errorMsg.size(), 0);
+                        }
+                        else{
+                            socketToUser[sd]=username;
+                            string succesMsg="login succesful\n";
+                            send(sd, succesMsg.c_str(), succesMsg.size(), 0);
+                        }
+                    }
 
                     if(type==Command::QUIT){
                         close(sd);

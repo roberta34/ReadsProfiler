@@ -17,6 +17,9 @@ Command RequestParser::parse(const string &message){
     if(cmd=="recommendations")
         return Command::RECOMMENDATIONS;
 
+    if(cmd=="login")
+        return Command::LOGIN;
+
     if(cmd=="quit")
         return Command::QUIT;
 

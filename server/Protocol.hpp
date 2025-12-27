@@ -5,6 +5,7 @@ enum class Command{
     SEARCH,
     DOWNLOAD, 
     RECOMMENDATIONS,
+    LOGIN, 
     QUIT,
     INVALID 
 };
