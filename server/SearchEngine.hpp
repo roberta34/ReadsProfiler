@@ -15,5 +15,5 @@ struct Book{
 
 class SearchEngine{
     public:
-        string searchHandler(const string &parameters);
+        string searchHandler(const string &parametres);
 };

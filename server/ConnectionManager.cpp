@@ -1,6 +1,7 @@
 #include "ConnectionManager.hpp"
 #include "RequestParser.hpp"
 #include "Protocol.hpp"
+#include "SearchEngine.hpp"
 
 #include <string>
 #include <stdio.h>
@@ -39,6 +40,7 @@ ConnectionManager::ConnectionManager(){
 void ConnectionManager::run(){
     fd_set readfds;
     RequestParser parser;
+    SearchEngine searchEngine;
     int clientSocket[30]={0};
     socklen_t addrlen=sizeof(address);
     char buffer[1024];
@@ -108,6 +110,7 @@ void ConnectionManager::run(){
 
                     send(sd, response.c_str(), response.size(),0);
 
+                    
                     if(type == Command::LOGIN){
                         int pos=msg.find(' ');
                         string username;
@@ -122,6 +125,15 @@ void ConnectionManager::run(){
                             string succesMsg="login succesful\n";
                             send(sd, succesMsg.c_str(), succesMsg.size(), 0);
                         }
+                    }
+
+                    if( type == Command::SEARCH){
+                        int pos=msg.find(' ');
+                        string filter;
+                        if (pos!=string::npos)
+                            filter=msg.substr(pos+1);
+                        string result=searchEngine.searchHandler(filter);
+                        send(sd, result.c_str(), result.size(),0);
                     }
 
                     if(type==Command::QUIT){
