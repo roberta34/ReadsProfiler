@@ -1,8 +1,12 @@
 #include "DownloadManager.hpp"
-
+#include "SearchEngine.hpp"
 
 #include <string>
 
 string downloadHandler(const string &parametres){
-    return "You can download";
+       for (const auto& book:bookList){
+        if (book.title==parametres || book.ISBN==parametres)
+            return book.content;
+       }
+       return "Book not found";
 }

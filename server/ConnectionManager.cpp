@@ -2,6 +2,7 @@
 #include "RequestParser.hpp"
 #include "Protocol.hpp"
 #include "SearchEngine.hpp"
+#include "DownloadManager.hpp"
 
 #include <string>
 #include <stdio.h>
@@ -41,6 +42,7 @@ void ConnectionManager::run(){
     fd_set readfds;
     RequestParser parser;
     SearchEngine searchEngine;
+    DownloadManager downloadManager;
     int clientSocket[30]={0};
     socklen_t addrlen=sizeof(address);
     char buffer[1024];
@@ -136,7 +138,17 @@ void ConnectionManager::run(){
                         send(sd, result.c_str(), result.size(),0);
                     }
 
-                    if(type==Command::QUIT){
+                    if(type == Command::DOWNLOAD){
+                        int pos=msg.find(' ');
+                        string id;
+                        if(pos!=string::npos)
+                            id=msg.substr(pos+1);
+                        string result=downloadManager.downloadHandler(id);
+                        send(sd, result.c_str(), result.size(),0);
+                        
+                    }
+
+                    if(type == Command::QUIT){
                         close(sd);
                         clientSocket[i]=0;
                     }

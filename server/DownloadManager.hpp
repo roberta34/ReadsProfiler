@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SearchEngine.hpp"
 #include <string>
 
 using namespace std;

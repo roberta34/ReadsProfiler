@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -11,7 +12,10 @@ struct Book{
     int year;
     string ISBN;
     double rating;
+    string content;
 };
+
+extern vector<Book> bookList;
 
 class SearchEngine{
     public:
