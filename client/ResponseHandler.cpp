@@ -18,11 +18,16 @@ void ResponseHandler::handleResponse(const string &response){
         fWord=response.substr(0,pos);
     }
 
-    cout<<"[ResponseHandler] Server response: "<<response;
-
+    cout<<"[ResponseHandler] Server response: ";
     if(fWord=="validate"){
+        cout<<response<<endl;
         cout<<"[ResponseHandler] Command accepted by server.\n";
     }
-    else if (fWord == "error")
+    else if (fWord == "error") {
+        cout<<response<<endl;
         cout<<"[ResponseHandler] Server reported an error.\n";
+    }
+    else {
+        cout<<response<<endl;
+    }
 }
