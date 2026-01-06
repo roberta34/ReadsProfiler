@@ -6,7 +6,10 @@
 using namespace std;
 
 class DownloadManager{
-    public: 
-        string downloadHandler(const string &parametres);
+    private:
+        sqlite3* db;
+    public:
+        explicit DownloadManager(sqlite3* database); 
+        string downloadHandler(int userId,const string &parameters);
 
 };

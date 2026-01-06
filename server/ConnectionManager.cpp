@@ -15,7 +15,7 @@
 
 using namespace std;
 
-ConnectionManager::ConnectionManager(){
+ConnectionManager::ConnectionManager(SearchEngine* se, DownloadManager* dm, RecommendationEngine *re) : searchEngine(se), downloadManager(dm), recommendationEngine(re){
     server_fd=socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd==0){
         perror("socket failed");
@@ -41,8 +41,7 @@ ConnectionManager::ConnectionManager(){
 void ConnectionManager::run(){
     fd_set readfds;
     RequestParser parser;
-    SearchEngine searchEngine;
-    DownloadManager downloadManager;
+    
     int clientSocket[30]={0};
     socklen_t addrlen=sizeof(address);
     char buffer[1024];
@@ -99,6 +98,7 @@ void ConnectionManager::run(){
 
                     cout<<"[ConnectionManager] Client disconnected: SD="<<sd<<" IP="<<inet_ntoa(address.sin_addr)<<" PORT="<<ntohs(address.sin_port)<<'\n';
 
+                    socketToUser.erase(sd);
                     close(sd);
                     clientSocket[i]=0;
                 }
@@ -108,10 +108,14 @@ void ConnectionManager::run(){
                     cout<<"[Server] Received: "<<msg;
 
                     Command type=parser.parse(msg);
-                    string response=buildResponse(type);
 
-                    send(sd, response.c_str(), response.size(),0);
+                    bool loggedIn=socketToUser.count(sd);
 
+                    if(!loggedIn && type!=Command::LOGIN && type!=Command::QUIT) {
+                        string err="error not logged in\n";
+                        send(sd, err.c_str(), err.size(),0);
+                        continue;
+                    }
                     
                     if(type == Command::LOGIN){
                         int pos=msg.find(' ');
@@ -129,26 +133,37 @@ void ConnectionManager::run(){
                         }
                     }
 
-                    if( type == Command::SEARCH){
+                    else if( type == Command::SEARCH){
                         int pos=msg.find(' ');
                         string filter;
                         if (pos!=string::npos)
                             filter=msg.substr(pos+1);
-                        string result=searchEngine.searchHandler(filter);
+                        string result=searchEngine->searchHandler(filter);
                         send(sd, result.c_str(), result.size(),0);
                     }
 
-                    if(type == Command::DOWNLOAD){
+                    else if(type == Command::DOWNLOAD){
                         int pos=msg.find(' ');
                         string id;
                         if(pos!=string::npos)
                             id=msg.substr(pos+1);
-                        string result=downloadManager.downloadHandler(id);
+                        string result=downloadManager->downloadHandler(id);
                         send(sd, result.c_str(), result.size(),0);
                         
                     }
 
+                    else if(type == Command::RECOMMENDATIONS) {
+                        int pos=msg.find(' ');
+                        string filter;
+                        if (pos!=string::npos) 
+                            filter=msg.substr(pos+1);
+
+                        string result=recommendationEngine->recommendationsHandler(filter);
+                        send(sd, result.c_str(), result.size(),0);
+                    }
+
                     if(type == Command::QUIT){
+                        socketToUser.erase(sd);
                         close(sd);
                         clientSocket[i]=0;
                     }
