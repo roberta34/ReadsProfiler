@@ -12,6 +12,6 @@ class SQLiteStorageLayer{
         SQLiteStorageLayer();
         ~SQLiteStorageLayer();
         bool initDatabase();
-        bool execute(string &sql);
-        sqlite3* getDB();
+        bool execute(const string &sql);
+        sqlite3* getDB() const;
 };
