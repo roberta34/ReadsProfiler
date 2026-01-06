@@ -2,22 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <sqlite3.h>
 
 using namespace std;
 
-struct Book{
-    string title;
-    string author;
-    string genre;
-    int year;
-    string ISBN;
-    double rating;
-    string content;
-};
-
-extern vector<Book> bookList;
-
 class SearchEngine{
+    private:
+        sqlite3* db;
     public:
-        string searchHandler(const string &parametres);
+        explicit SearchEngine(sqlite3* database);
+        string searchHandler(const string &parameters);
 };

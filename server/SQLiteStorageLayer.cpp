@@ -3,10 +3,10 @@
 
 using namespace std;
 
-SQLiteStorageLayer::SQLiteStorageLayer(): database(nullptr) {
+SQLiteStorageLayer::SQLiteStorageLayer(): dataBase(nullptr) {
    int rc=sqlite3_open("library.db", &dataBase);
    if(rc!=SQLITE_OK) {
-        cerr<<"The database could not be opened\n"<< sqlite3_errmsg(database)<<"\n";
+        cerr<<"The database could not be opened\n"<< sqlite3_errmsg(dataBase)<<"\n";
         sqlite3_close(dataBase);
         dataBase=nullptr;
    }
@@ -23,32 +23,36 @@ SQLiteStorageLayer::~SQLiteStorageLayer() {
     }
 }
 
-bool SQLiteStorageLayer::execute(const string &sql){
-    if (dataBase==nullptr) {
+bool SQLiteStorageLayer::execute(const std::string &sql) {
+    if (dataBase == nullptr) {
         return false;
     }
 
-    char *errorMsg=nullptr;
-    int rc=sqlite3_exec(dataBase, sql.c_str(), nullptr, nullptr, &errorMsg);
-    //sql.c_str() este SQL-ul ca const char*
-    //&errorMsg-aici se pune mesajul de eroare daca apare
-    if (rc!=SQLITE_OK) {
-        cerr<<"SQLite error: ";
-        if (errorMsg!=nullptr)
-            cerr<<"unknown error";
-        cerr<<'\n';
-        sqlite3_free(errMsg);
+    char *errorMsg = nullptr;
+    int rc = sqlite3_exec(dataBase, sql.c_str(), nullptr, nullptr, &errorMsg);
+
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQLite error: ";
+        if (errorMsg != nullptr) {
+            std::cerr << errorMsg;
+            sqlite3_free(errorMsg);
+        } else {
+            std::cerr << "unknown error";
+        }
+        std::cerr << '\n';
         return false;
     }
+
     return true;
 }
+
 
 bool SQLiteStorageLayer::initDatabase() {
     if (!dataBase) 
         return false;
 
     if(!execute("PRAGMA foreign_keys=ON;"))
-        retun false;
+        return false;
     //SQLite are foreign keys dezactivate implicit, astfel le activam
 
     //==AUTHORS==
@@ -107,6 +111,7 @@ bool SQLiteStorageLayer::initDatabase() {
     if(!execute(createBookGenres))
         return false;
 
+    //==AUTHOR-GENRES==
     const string createAuthorGenres=R"(
         CREATE TABLE IF NOT EXISTS author_genres(
             author_id INTEGER NOT NULL,
@@ -116,8 +121,98 @@ bool SQLiteStorageLayer::initDatabase() {
             FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
         );
     )";
+
+    if(!execute(createAuthorGenres))
+        return false;
+
+
+    //==USERS==
+    const string createUsers=R"(
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE
+        );
+    )";
+
+    if(!execute(createUsers))
+        return false;
+
+    //==SEARCHES==
+    const string createSearches=R"(
+        CREATE TABLE IF NOT EXISTS searches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            query_text TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+    )";
+
+    if(!execute(createSearches))
+        return false;
+
+    //==ACCESSED-RESULTS===
+    const string createAccessed=R"(
+        CREATE TABLE IF NOT EXISTS search_results_accessed (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            search_id INTEGER NOT NULL,
+            book_id INTEGER NOT NULL,
+            accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (search_id) REFERENCES searches(id) ON DELETE CASCADE,
+            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+        );
+    )";
+
+    if(!execute(createAccessed))
+        return false;
+
+    //==DOWNLOADS==
+    const string createDownloads=R"(
+        CREATE TABLE IF NOT EXISTS downloads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            book_id INTEGER NOT NULL, 
+            downloaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+        );
+    )";
+
+    if(!execute(createDownloads))
+        return false;
+
+    //==RATINGS==
+    const string createRatings=R"(
+        CREATE TABLE IF NOT EXISTS ratings (
+            user_id INTEGER NOT NULL,
+            book_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL CHECK(rating>=1 AND rating<=5),
+            rated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, book_id),
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
+        );
+    )";
+
+    if(!execute(createRatings))
+        return false;
+
+    //==INDEXES==
+    const string createIndexes=R"(
+        CREATE INDEX IF NOT EXISTS index_books_title ON books(title); 
+        CREATE INDEX IF NOT EXISTS index_books_year ON books(year);
+        CREATE INDEX IF NOT EXISTS index_books_ISBN ON books(ISBN);
+        CREATE INDEX IF NOT EXISTS index_authors_name ON authors(name);
+        CREATE INDEX IF NOT EXISTS index_genres_name ON genres(name);
+    )";
+
+    //se creeaza cate un index asupra coloanelor mentionate si astfel cautarea va fi mai rapida: decat sa caute in toata tabela, va cauta doar in coloanele mentionate
+    
+    if(!execute(createIndexes))
+        return false;
+    return true;
 }   
 
-sqlite3* SQLiteStorageLayer::getDB(){
+sqlite3* SQLiteStorageLayer::getDB()const {
     return dataBase;
 }
