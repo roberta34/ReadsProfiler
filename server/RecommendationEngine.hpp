@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <sqlite3.h>
 
 using namespace std;
 
@@ -13,5 +14,5 @@ class RecommendationEngine{
         void recommendByPopularity(string& result, int& count, int limit);
     public:
         explicit RecommendationEngine(sqlite3* database);
-        string recommendationsHandler(const string &parametres);
+        string recommendationsHandler(int userId);
 };
