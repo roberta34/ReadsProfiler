@@ -17,63 +17,87 @@ static string trim(const string& s) {
 
 SearchEngine::SearchEngine(sqlite3* database): db(database){}
 
-string SearchEngine::searchHandler(const string& parameters, vector<int>&resultBookIds ){
-    string baseSql=
-        "SELECT books.id,books.title, authors.name, books.year, books.ISBN, books.rating "
-        "FROM books "
-        "JOIN authors ON books.author_id=authors.id";
-    vector<string> conditions;
-    string genreValue;
+string SearchEngine::searchHandler(const string& parameters,vector<int>& resultBookIds)
+{
+    string params = trim(parameters);
 
-    size_t start=0, end;
-    while((end=parameters.find(' ', start))!=string::npos) {
-        string token=parameters.substr(start, end-start);
-        start=end+1;
-        int eq=token.find('=');
+    if (params.rfind("title=", 0) == 0) {
+        string value = trim(params.substr(6));
 
-        if(eq==string::npos) continue; //daca nu exista egal, token ul e ignorat
+        string sql =
+            "SELECT b.id, b.title, a.name, b.year, b.ISBN, b.rating "
+            "FROM books b "
+            "JOIN authors a ON b.author_id = a.id "
+            "WHERE b.title LIKE '%" + value + "%' COLLATE NOCASE;";
 
-        string key=trim(token.substr(0,eq));
-        string value=trim(token.substr(eq+1));
+        sqlite3_stmt* stmt = nullptr;
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+            return "SQL prepare error\n";
 
-        if (key=="title")
-            conditions.push_back("books.title LIKE '%" + value + "%' COLLATE NOCASE");
-        else if (key=="author")
-            conditions.push_back("authors.name LIKE '%" + value + "%' COLLATE NOCASE");
-        else if (key=="year")
-            conditions.push_back("books.year = " + value);
-        else if (key=="ISBN")
-            conditions.push_back("books.ISBN = '" + value + "'");
-        else if (key=="rating")
-            conditions.push_back("books.rating>="+value);
-        else if (key=="genre")
-            genreValue=value;
-    }
-    if (start < parameters.size()) {
-        string token = parameters.substr(start);
-        int eq = token.find('=');
+        string result;
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            int bookId = sqlite3_column_int(stmt, 0);
+            const unsigned char* title = sqlite3_column_text(stmt, 1);
+            const unsigned char* author = sqlite3_column_text(stmt, 2);
+            int year = sqlite3_column_int(stmt, 3);
+            const unsigned char* isbn = sqlite3_column_text(stmt, 4);
+            double rating = sqlite3_column_double(stmt, 5);
 
-        if (eq != string::npos) {
-            string key = trim(token.substr(0, eq));
-            string value = trim(token.substr(eq + 1));
+            resultBookIds.push_back(bookId);
 
-            if (key == "title")
-                conditions.push_back("books.title LIKE '%" + value + "%'");
-            else if (key == "author")
-               conditions.push_back("authors.name LIKE '%" + value + "%'");
-            else if (key == "year")
-                conditions.push_back("books.year = " + value);
-            else if (key == "ISBN")
-                conditions.push_back("books.ISBN = '" + value + "'");
-            else if (key == "rating")
-                conditions.push_back("books.rating >= " + value);
-            else if (key == "genre")
-                genreValue=value;
+            result += "Title: " + string(reinterpret_cast<const char*>(title)) +
+                      ", Author: " + string(reinterpret_cast<const char*>(author)) +
+                      ", Year: " + to_string(year) +
+                      ", ISBN: " + string(reinterpret_cast<const char*>(isbn)) +
+                      ", Rating: " + to_string(rating) + "\n";
         }
+
+        sqlite3_finalize(stmt);
+
+        return result.empty() ? "No book found\n" : result;
     }
 
-    if(!genreValue.empty()) {
-        string sql=R"(
+    if (params.rfind("author=", 0) == 0) {
+        string value = trim(params.substr(7));
+
+        string sql =
+            "SELECT b.id, b.title, a.name, b.year, b.ISBN, b.rating "
+            "FROM books b "
+            "JOIN authors a ON b.author_id = a.id "
+            "WHERE a.name LIKE '%" + value + "%' COLLATE NOCASE;";
+
+        sqlite3_stmt* stmt = nullptr;
+        if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+            return "SQL prepare error\n";
+
+        string result;
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            int bookId = sqlite3_column_int(stmt, 0);
+            const unsigned char* title = sqlite3_column_text(stmt, 1);
+            const unsigned char* author = sqlite3_column_text(stmt, 2);
+            int year = sqlite3_column_int(stmt, 3);
+            const unsigned char* isbn = sqlite3_column_text(stmt, 4);
+            double rating = sqlite3_column_double(stmt, 5);
+
+            resultBookIds.push_back(bookId);
+
+            result += "Title: " + string(reinterpret_cast<const char*>(title)) +
+                      ", Author: " + string(reinterpret_cast<const char*>(author)) +
+                      ", Year: " + to_string(year) +
+                      ", ISBN: " + string(reinterpret_cast<const char*>(isbn)) +
+                      ", Rating: " + to_string(rating) + "\n";
+        }
+
+        sqlite3_finalize(stmt);
+
+        return result.empty() ? "No book found\n" : result;
+    }
+
+
+    if (params.rfind("genre=", 0) == 0) {
+        string value = trim(params.substr(6));
+
+        string sql = R"(
             WITH RECURSIVE subgenres(id) AS (
                 SELECT id FROM genres WHERE name = ?
                 UNION ALL
@@ -82,53 +106,50 @@ string SearchEngine::searchHandler(const string& parameters, vector<int>&resultB
             )
             SELECT DISTINCT b.id, b.title, a.name, b.year, b.ISBN, b.rating
             FROM books b
-            JOIN authors a ON b.author_id=a.id
-            JOIN book_genres bg ON b.id=bg.book_id
+            JOIN authors a ON b.author_id = a.id
+            JOIN book_genres bg ON b.id = bg.book_id
             WHERE bg.genre_id IN (SELECT id FROM subgenres);
         )";
-        sqlite3_stmt* stmt=nullptr;
 
+        sqlite3_stmt* stmt = nullptr;
         if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
             return "SQL prepare error\n";
 
-        sqlite3_bind_text(stmt, 1, genreValue.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 1, value.c_str(), -1, SQLITE_TRANSIENT);
 
         string result;
-        while(sqlite3_step(stmt)==SQLITE_ROW) {
-            int bookId=sqlite3_column_int(stmt,0);
-            const unsigned char* title=sqlite3_column_text(stmt,1);
-            const unsigned char* author=sqlite3_column_text(stmt,2);
-            int year=sqlite3_column_int(stmt,3);
-            const unsigned char* isbn=sqlite3_column_text(stmt,4);
-            double rating=sqlite3_column_double(stmt,5);
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            int bookId = sqlite3_column_int(stmt, 0);
+            const unsigned char* title = sqlite3_column_text(stmt, 1);
+            const unsigned char* author = sqlite3_column_text(stmt, 2);
+            int year = sqlite3_column_int(stmt, 3);
+            const unsigned char* isbn = sqlite3_column_text(stmt, 4);
+            double rating = sqlite3_column_double(stmt, 5);
 
             resultBookIds.push_back(bookId);
 
-            result+="Title: "+string(reinterpret_cast<const char*>(title))+", Author: "+string(reinterpret_cast<const char*>(author))+", Year: "+to_string(year)+", ISBN: "+string(reinterpret_cast<const char*>(isbn))+", Rating: "+to_string(rating)+"\n";
-
-            
+            result += "Title: " + string(reinterpret_cast<const char*>(title)) +
+                      ", Author: " + string(reinterpret_cast<const char*>(author)) +
+                      ", Year: " + to_string(year) +
+                      ", ISBN: " + string(reinterpret_cast<const char*>(isbn)) +
+                      ", Rating: " + to_string(rating) + "\n";
         }
+
         sqlite3_finalize(stmt);
-        if(result.empty())
-            return "No book found\n";
-        return result;
+
+        return result.empty() ? "No book found\n" : result;
     }
 
-    string sql=baseSql;
-    if (!conditions.empty()) {
-        sql+=" WHERE ";
-        for(int i=0;i<conditions.size();++i) {
-            sql+=conditions[i];
-            if(i+1<conditions.size())
-                sql+=" AND ";
-        }
-    }
-    sql+=";";
-    string result;
+    string sql =
+        "SELECT b.id, b.title, a.name, b.year, b.ISBN, b.rating "
+        "FROM books b "
+        "JOIN authors a ON b.author_id = a.id;";
 
-    sqlite3_stmt* stmt=nullptr;
-    if(sqlite3_prepare_v2(db, sql.c_str(),-1, &stmt, nullptr)!=SQLITE_OK)
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         return "SQL prepare error\n";
+
+    string result;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int bookId = sqlite3_column_int(stmt, 0);
         const unsigned char* title = sqlite3_column_text(stmt, 1);
@@ -148,7 +169,5 @@ string SearchEngine::searchHandler(const string& parameters, vector<int>&resultB
 
     sqlite3_finalize(stmt);
 
-    if(result.empty())
-        return "No book found\n";
-    return result;
+    return result.empty() ? "No book found\n" : result;
 }
