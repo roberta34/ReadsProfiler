@@ -46,21 +46,21 @@ void ResponseHandler::handleResponse(const string &response) {
         out << content;
         out.close();
 
-        cout << "[Client] Book downloaded locally as " << filename << "\n";
+        cout << "[Client] Book downloaded locally as " << filename << "\n\n";
         return;
     }
 
     int pos = resp.find(' ');
     string fWord = (pos == string::npos) ? resp : resp.substr(0, pos);
 
-    cout << "[ResponseHandler] Server response: ";
+    cout << "[ResponseHandler] Server response: \n\n";
     if (fWord == "validate") {
         cout << resp << endl;
-        cout << "[ResponseHandler] Command accepted by server.\n";
+        cout << "[ResponseHandler] Command accepted by server.\n\n";
     }
     else if (fWord == "error") {
         cout << resp << endl;
-        cout << "[ResponseHandler] Server reported an error.\n";
+        cout << "[ResponseHandler] Server reported an error.\n\n";
     }
     else {
         cout << resp << endl;
