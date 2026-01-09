@@ -22,6 +22,7 @@ int main() {
     int sock_fd=dispatcher.getSocketFd();
     fd_set fdsread;
     char buffer[1024];
+    string socketBuffer;
     cout<<"ReadsProfiler client started.\n"<<"Available commands:\n"<<" login <user>\n"<<" search <criterii>\n"<<" download <id_carte>\n"<<" recommendations <criterii>\n"<<" quit\n";
 
     while(true) {
@@ -55,6 +56,10 @@ int main() {
             if (!command.empty() && command.back() == '\n') {
                 command.pop_back();
             }
+
+            if(command.empty())
+                continue;
+
             // Send command to server
             if (!dispatcher.sendCommand(command)) {
                 cerr << "Failed to send the command to server.\n";
@@ -64,16 +69,25 @@ int main() {
 
         if (FD_ISSET(sock_fd, &fdsread)) {
             memset(buffer, 0, sizeof(buffer));
-            int n=read(sock_fd, buffer, sizeof(buffer)-1);
-            if(n<=0) {
-                cout<<"Server closed connection.\n";
+            int n = read(sock_fd, buffer, sizeof(buffer) - 1);
+
+            if (n <= 0) {
+                cout << "Server closed connection.\n";
                 break;
             }
-            string response(buffer);
-            responsehandler.handleResponse(response);
-            if(response.rfind("validate quit", 0) == 0) {
-                cout << "Quit acknowledged by server, exiting client.\n";
-                break;
+
+            buffer[n] = '\0';
+            socketBuffer += buffer;
+
+            // cazul DOWNLOAD (mesaj mare, cu marker de final)
+            if (socketBuffer.find("DOWNLOAD_CONTENT_END") != string::npos) {
+                responsehandler.handleResponse(socketBuffer);
+                socketBuffer.clear();
+            }
+            // alte răspunsuri (search, login, recommendations)
+            else if (socketBuffer.find('\n') != string::npos) {
+                responsehandler.handleResponse(socketBuffer);
+                socketBuffer.clear();
             }
         }
     }
