@@ -11,5 +11,5 @@ class SearchEngine{
         sqlite3* db;
     public:
         explicit SearchEngine(sqlite3* database);
-        string searchHandler(const string &parameters);
+        string searchHandler(const string &parameters, vector<int>& resultBookIds);
 };

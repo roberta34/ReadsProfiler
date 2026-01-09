@@ -1,0 +1,29 @@
+-- AUTHORS
+INSERT INTO authors (name) VALUES ('Frank Herbert');
+INSERT INTO authors (name) VALUES ('Isaac Asimov');
+INSERT INTO authors (name) VALUES ('George Orwell');
+
+-- GENRES
+INSERT INTO genres (name) VALUES ('Science Fiction');
+INSERT INTO genres (name) VALUES ('Dystopian');
+
+-- BOOKS
+INSERT INTO books (title, author_id, year, ISBN, rating, file_path)
+VALUES ('Dune', 1, 1965, '9780441172719', 4.5, '/books/dune.txt');
+
+INSERT INTO books (title, author_id, year, ISBN, rating, file_path)
+VALUES ('Foundation', 2, 1951, '9780553293357', 4.8, '/books/foundation.txt');
+
+INSERT INTO books (title, author_id, year, ISBN, rating, file_path)
+VALUES ('1984', 3, 1949, '9780451524935', 4.7, '/books/1984.txt');
+
+-- BOOK_GENRES
+INSERT INTO book_genres (book_id, genre_id) VALUES (1, 1);
+INSERT INTO book_genres (book_id, genre_id) VALUES (2, 1);
+INSERT INTO book_genres (book_id, genre_id) VALUES (3, 2);
+
+-- AUTHOR_GENRES
+INSERT INTO author_genres (author_id, genre_id) VALUES (1, 1);
+INSERT INTO author_genres (author_id, genre_id) VALUES (2, 1);
+INSERT INTO author_genres (author_id, genre_id) VALUES (3, 2);
+

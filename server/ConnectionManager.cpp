@@ -229,8 +229,19 @@ void ConnectionManager::run(){
                             send(sd, err.c_str(), err.size(), 0);
                             continue;
                         }
+                        vector<int> resultBookIds;
+                        string result=searchEngine->searchHandler(filter, resultBookIds);
+                        for(int bookId : resultBookIds) {
+                            const char*sql= "INSERT INTO search_results_accessed (search_id, book_id) VALUES (?, ?);";
+                            sqlite3_stmt* stmt=nullptr;
 
-                        string result=searchEngine->searchHandler(filter);
+                            if(sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr)==SQLITE_OK) {
+                                sqlite3_bind_int(stmt,1,searchId);
+                                sqlite3_bind_int(stmt,2,bookId);
+                                sqlite3_step(stmt);
+                                sqlite3_finalize(stmt);
+                            }
+                        }
                         send(sd, result.c_str(), result.size(), 0);
                         continue;
                     }

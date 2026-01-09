@@ -17,9 +17,9 @@ static string trim(const string& s) {
 
 SearchEngine::SearchEngine(sqlite3* database): db(database){}
 
-string SearchEngine::searchHandler(const string& parameters){
+string SearchEngine::searchHandler(const string& parameters, vector<int>&resultBookIds ){
     string sql=
-        "SELECT books.title, authors.name, books.year, books.ISBN, books.rating "
+        "SELECT books.id,books.title, authors.name, books.year, books.ISBN, books.rating "
         "FROM books "
         "JOIN authors ON books.author_id=authors.id";
     vector<string> conditions;
@@ -46,6 +46,27 @@ string SearchEngine::searchHandler(const string& parameters){
         else if (key=="rating")
             conditions.push_back("books.rating>="+value);
     }
+    if (start < parameters.size()) {
+        string token = parameters.substr(start);
+        int eq = token.find('=');
+
+        if (eq != string::npos) {
+            string key = trim(token.substr(0, eq));
+            string value = trim(token.substr(eq + 1));
+
+            if (key == "title")
+                conditions.push_back("books.title LIKE '%" + value + "%'");
+            else if (key == "author")
+               conditions.push_back("authors.name LIKE '%" + value + "%'");
+            else if (key == "year")
+                conditions.push_back("books.year = " + value);
+            else if (key == "ISBN")
+                conditions.push_back("books.ISBN = '" + value + "'");
+            else if (key == "rating")
+                conditions.push_back("books.rating >= " + value);
+        }
+    }
+
 
     if (!conditions.empty()) {
         sql+=" WHERE ";
@@ -58,29 +79,27 @@ string SearchEngine::searchHandler(const string& parameters){
     sql+=";";
     string result;
 
-    char* errorMessage=nullptr;
-    //functie apelata pentru fiecare rand rezultat
-    auto callback=[](void* data, int argc, char** argv, char**) -> int {
-        string& res=*static_cast<string*>(data); //ii spune sa trateze adresa ca si cum ar fi string*
-        res+= "Title: " + string(argv[0])+
-        ", Author: " + string(argv[1]) + 
-        ", Year: " + string(argv[2]) + 
-        ", ISBN: " + string(argv[3]) + 
-        ", Rating: " + string(argv[4]) + "\n";
-        return 0;
-    };
+    sqlite3_stmt* stmt=nullptr;
+    if(sqlite3_prepare_v2(db, sql.c_str(),-1, &stmt, nullptr)!=SQLITE_OK)
+        return "SQL prepare error\n";
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int bookId = sqlite3_column_int(stmt, 0);
+        const unsigned char* title = sqlite3_column_text(stmt, 1);
+        const unsigned char* author = sqlite3_column_text(stmt, 2);
+        int year = sqlite3_column_int(stmt, 3);
+        const unsigned char* isbn = sqlite3_column_text(stmt, 4);
+        double rating = sqlite3_column_double(stmt, 5);
 
-    int rc=sqlite3_exec(db, sql.c_str(), callback, &result, &errorMessage);
+        resultBookIds.push_back(bookId);
 
-    if(rc!=SQLITE_OK) {
-        string err;
-        if(errorMessage!=nullptr)
-            err=string(errorMessage);
-        else
-            err=string("Unknown SQL error");
-        sqlite3_free(errorMessage);
-        return "SQL error: " + err + '\n';
+        result += "Title: " + string(reinterpret_cast<const char*>(title)) +
+                  ", Author: " + string(reinterpret_cast<const char*>(author)) +
+                  ", Year: " + to_string(year) +
+                  ", ISBN: " + string(reinterpret_cast<const char*>(isbn)) +
+                  ", Rating: " + to_string(rating) + "\n";
     }
+
+    sqlite3_finalize(stmt);
 
     if(result.empty())
         return "No book found\n";

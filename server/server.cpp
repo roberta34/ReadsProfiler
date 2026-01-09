@@ -15,6 +15,7 @@ int main(){
     RecommendationEngine recommendationEngine(storage.getDB());
 
     ConnectionManager cm(
+        storage.getDB(),
         &searchEngine,
         &downloadManager,
         &recommendationEngine
