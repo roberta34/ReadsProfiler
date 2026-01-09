@@ -137,6 +137,42 @@ void RecommendationEngine::recommendByPopularity(string& result, int& count, int
 
     sqlite3_finalize(stmt);
 }
+
+void RecommendationEngine::recommendBySimilarUsers(int userId, string& result, int& count, int limit) {
+    string sql=R"(
+        SELECT DISTINCT b.id, b.title, b.rating
+        FROM downloads d1
+        JOIN downloads d2 ON d1.book_id=d2.book_id
+        JOIN books b ON d2.book_id=b.id
+        WHERE d1.user_id=? 
+            AND d2.user_id!=?
+            AND b.id NOT IN (
+                SELECT book_id FROM downloads WHERE user_id=?
+            )
+            ORDER BY b.rating DESC
+            LIMIT ?;
+    )";
+    sqlite3_stmt* stmt;
+    if(sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)!=SQLITE_OK)
+        return;
+    sqlite3_bind_int(stmt,1,userId);
+    sqlite3_bind_int(stmt,2,userId);
+    sqlite3_bind_int(stmt,3,userId);
+    sqlite3_bind_int(stmt,4,limit-count);
+
+    while(sqlite3_step(stmt)==SQLITE_ROW && count<limit) {
+        const unsigned char* title=sqlite3_column_text(stmt,1);
+        double rating=sqlite3_column_double(stmt,2);
+
+        result+="[Similar user] ";
+        result+=string(reinterpret_cast<const char*>(title));
+        result+=" (rating ";
+        result+=to_string(rating);
+        result+=")\n";
+        count++;
+    }
+    sqlite3_finalize(stmt);
+}
 string RecommendationEngine::recommendationsHandler(int userId){
     string result;
     int count=0;
@@ -145,6 +181,9 @@ string RecommendationEngine::recommendationsHandler(int userId){
 
     if(count<LIMIT)
         recommendByGenres(userId, result, count, LIMIT);
+    
+    if(count<LIMIT)
+        recommendBySimilarUsers(userId, result, count, LIMIT);
 
     if(count<LIMIT)
         recommendByPopularity(result, count, LIMIT);
