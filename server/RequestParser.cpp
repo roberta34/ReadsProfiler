@@ -5,7 +5,8 @@
     using namespace std;
 
     Command RequestParser::parse(const string &message){
-        int pos=message.find(' ');
+
+        size_t pos = message.find_first_of(" \r\n");
         string cmd=message.substr(0, pos);
         
         if(cmd=="search")

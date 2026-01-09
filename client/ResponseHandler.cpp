@@ -1,33 +1,69 @@
 #include "ResponseHandler.hpp"
 #include <iostream> 
+#include <fstream>
+#include<cstring>
 
 using namespace std;
 
-void ResponseHandler::handleResponse(const string &response){
-    if(response.empty()) {
+void ResponseHandler::handleResponse(const string &response) {
+
+    if (response.empty()) {
         return;
     }
 
-    int pos=response.find(' ');
-    string fWord;
+    string resp = response;
+    resp.erase(0, resp.find_first_not_of("\r\n "));
 
-    if(pos==string::npos){
-        fWord=response;
-    }
-    else {
-        fWord=response.substr(0,pos);
+    if (resp.rfind("DOWNLOAD_CONTENT_BEGIN", 0) == 0) {
+
+        size_t titlePos = resp.find("TITLE:");
+        if (titlePos == string::npos) {
+            cout << "[Client] Invalid download response (no TITLE)\n";
+            return;
+        }
+
+        size_t titleEnd = resp.find('\n', titlePos);
+        string title = resp.substr(titlePos + 6, titleEnd - (titlePos + 6));
+
+        while (!title.empty() && (title.back() == '\r' || title.back() == ' '))
+            title.pop_back();
+        while (!title.empty() && title.front() == ' ')
+            title.erase(title.begin());
+
+        size_t contentStart = titleEnd + 1;
+        size_t contentEnd = resp.find("DOWNLOAD_CONTENT_END");
+
+        if (contentEnd == string::npos) {
+            cout << "[Client] Invalid download response (no END)\n";
+            return;
+        }
+
+        string content = resp.substr(contentStart, contentEnd - contentStart);
+
+        string filename = title + ".txt";
+
+        ofstream out(filename);
+        out << content;
+        out.close();
+
+        cout << "[Client] Book downloaded locally as " << filename << "\n";
+        return;
     }
 
-    cout<<"[ResponseHandler] Server response: ";
-    if(fWord=="validate"){
-        cout<<response<<endl;
-        cout<<"[ResponseHandler] Command accepted by server.\n";
+    int pos = resp.find(' ');
+    string fWord = (pos == string::npos) ? resp : resp.substr(0, pos);
+
+    cout << "[ResponseHandler] Server response: ";
+    if (fWord == "validate") {
+        cout << resp << endl;
+        cout << "[ResponseHandler] Command accepted by server.\n";
     }
     else if (fWord == "error") {
-        cout<<response<<endl;
-        cout<<"[ResponseHandler] Server reported an error.\n";
+        cout << resp << endl;
+        cout << "[ResponseHandler] Server reported an error.\n";
     }
     else {
-        cout<<response<<endl;
+        cout << resp << endl;
     }
 }
+
