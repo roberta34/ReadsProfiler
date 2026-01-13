@@ -66,4 +66,3 @@ void ResponseHandler::handleResponse(const string &response) {
         cout << resp << endl;
     }
 }
-

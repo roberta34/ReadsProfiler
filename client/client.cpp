@@ -9,7 +9,7 @@
     using namespace std;
 
     int main() {
-        CommandDispatcher dispatcher("127.0.0.1",8080);
+        CommandDispatcher dispatcher("10.102.96.2",8080);
 
         ResponseHandler responsehandler;
 
