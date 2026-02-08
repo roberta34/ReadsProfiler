@@ -6,7 +6,7 @@ The system supports **advanced book search**, **file download**, and **personali
 
 The project was developed using **TCP networking (POSIX)** and a **SQLite database**, following a modular and extensible architecture.
 
-# Features
+## Features
 - **User Authentication**
     - login is required before accessing any functionality
 
@@ -24,7 +24,7 @@ The project was developed using **TCP networking (POSIX)** and a **SQLite databa
         - preferred genres
         - frequently accessed authors
 
-# Architecture Overview
+## Architecture Overview
 
 ReadsProfiler follows a **client–server architecture** using the **TCP protocol**.
 
@@ -35,8 +35,8 @@ The application is structured on **three logical layers**:
 
 The **server** handles all computational logic and database operations, while the **client** acts as an interface between the user and the system.
 
-# Project Structure
-
+## Project Structure
+```text
 ReadsProfiler/
 |-- client/
 |   |-- client.cpp    
@@ -50,21 +50,20 @@ ReadsProfiler/
     |__ *.txt    ## It contains a short description on every book inserted
 |   |-- server.c                       
 |   |-- ConnectionManager.hpp
-|   |-- ConnectionManager.hpp           ## Manages the communication from TCP
+|   |-- ConnectionManager.cpp           ## Manages the communication from TCP
 |   |-- DownloadManager.hpp
 |   |-- DownloadManager.cpp             ## Downloads the books and send them to the client
 |   |-- Protocol.hpp
 |   |-- Protocol.cpp                    
 |   |-- RecommendationEngine.hpp
-|   |-- RecommendationEngine.cpp       ## Generate personalized recommendations for every user, based on their behaviour
+|   |-- RecommendationEngine.cpp       ## Generates personalized recommendations for every user, based on their behaviour
 |   |-- RequestParser.hpp
-|   |-- RequestParser.cpp              ## Validates the request structure, identifies the operation to be performed
-(download, search, recommendation) and extracts the essential keywords.
-
+|   |-- RequestParser.cpp              ## Validates the request structure
 |   |-- SQLiteStorageLayer.hpp
 |   |-- SQLiteStorageLayer.cpp         ## Manages the database
 |   |-- SearchEngine.hpp
-|   |-- SearchEngine.cpp               ## Searches the books based on the criterias
+|   |-- SearchEngine.cpp               ## Searches the books based on the criteria
 |   |-- library.db
 |   |__ seed.sql
 |__ README.md
+
