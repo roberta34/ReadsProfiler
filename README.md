@@ -47,7 +47,7 @@ ReadsProfiler/
 |
 |-- server/
 |   |-- books/   ## The books inserted into the database
-    |__ *.txt    ## It contains a short description on every book inserted
+        |__ *.txt    ## It contains a short description on every book inserted
 |   |-- server.c                       
 |   |-- ConnectionManager.hpp
 |   |-- ConnectionManager.cpp           ## Manages the communication from TCP
@@ -66,4 +66,5 @@ ReadsProfiler/
 |   |-- library.db
 |   |__ seed.sql
 |__ README.md
+
 
