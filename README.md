@@ -38,33 +38,34 @@ The **server** handles all computational logic and database operations, while th
 ## Project Structure
 ```text
 ReadsProfiler/
-|-- client/
-|   |-- client.cpp    
-|   |-- CommandDispatcher.hpp            
-|   |-- CommandDispatcher.cpp             ## Sends requests to the server and manages the TCP connection using send() and recv()
-|   |-- ResponseHandler.hpp
-|   |__ ResponseHandler.cpp               
+├── client/
+|   ├── client.cpp    
+|   ├── CommandDispatcher.hpp            
+|   ├── CommandDispatcher.cpp             ## Sends requests to the server and manages the TCP connection 
+|   ├── ResponseHandler.hpp
+|   └── ResponseHandler.cpp               
 |
-|-- server/
-|   |-- books/   ## The books inserted into the database
-        |__ *.txt    ## It contains a short description on every book inserted
-|   |-- server.c                       
-|   |-- ConnectionManager.hpp
-|   |-- ConnectionManager.cpp           ## Manages the communication from TCP
-|   |-- DownloadManager.hpp
-|   |-- DownloadManager.cpp             ## Downloads the books and send them to the client
-|   |-- Protocol.hpp
-|   |-- Protocol.cpp                    
-|   |-- RecommendationEngine.hpp
-|   |-- RecommendationEngine.cpp       ## Generates personalized recommendations for every user, based on their behaviour
-|   |-- RequestParser.hpp
-|   |-- RequestParser.cpp              ## Validates the request structure
-|   |-- SQLiteStorageLayer.hpp
-|   |-- SQLiteStorageLayer.cpp         ## Manages the database
-|   |-- SearchEngine.hpp
-|   |-- SearchEngine.cpp               ## Searches the books based on the criteria
-|   |-- library.db
-|   |__ seed.sql
-|__ README.md
+├── server/
+|   ├── books/   ## The books inserted into the database
+            └── *.txt    ## It contains a short description on every book inserted
+|   ├── server.c                       
+|   ├── ConnectionManager.hpp
+|   ├── ConnectionManager.cpp           ## Manages the communication over TCP
+|   ├── DownloadManager.hpp
+|   ├── DownloadManager.cpp             ## Downloads the books and sends them to the client
+|   ├── Protocol.hpp
+|   ├── Protocol.cpp                    
+|   ├── RecommendationEngine.hpp
+|   ├── RecommendationEngine.cpp       ## Generates personalized recommendations for every user, based on their behaviour
+|   ├── RequestParser.hpp
+|   ├── RequestParser.cpp              ## Validates the request structure
+|   ├── SQLiteStorageLayer.hpp
+|   ├── SQLiteStorageLayer.cpp         ## Manages the database
+|   ├── SearchEngine.hpp
+|   ├── SearchEngine.cpp               ## Searches the books based on the criteria
+|   ├── library.db
+|   └── seed.sql
+└── README.md
+
 
 
